@@ -11,30 +11,69 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.301
+
     - name: Install dependencies
       run: dotnet restore HSMServer/HSMServer.sln
+
     - name: Build
       run: dotnet build HSMServer/HSMServer.sln --configuration Release --no-restore --output '${{ github.workspace }}\Release'  
+    
     - name: Install Client Dependencies
       run: dotnet restore HSMClient/HSMClient.sln
+    
     - name: Build Client
       run: dotnet build HSMClient/HSMClient.sln --configuration Release --no-restore --output '${{ github.workspace }}\Release\Client'
-    - name: Create Artifact Folder
-      run: New-Item -Path '${{ github.workspace }}' -Name "Artifacts" -ItemType "directory"
-      shell: powershell
+    
     - name: Copy Artifacts
-      run: Copy-Item -Path '${{ github.workspace }}\Release' -Destination ${{ github.workspace }}\Artifacts -Recurse
+      run: |
+        New-Item -Path '${{ github.workspace }}' -Name "Artifacts" -ItemType "directory"
+        Copy-Item -Path '${{ github.workspace }}\Release' -Destination ${{ github.workspace }}\Artifacts -Recurse
       shell: powershell
+    
     - name: Publish Artifact
       uses: actions/upload-artifact@v2
       with:
        path: ${{ github.workspace }}\Artifacts
        name: ${{ github.run_number }}
+
     - name: Download Artifacts
       uses: actions/download-artifact@v2
+
     - name: Display structure of downloaded files
-      run: ls -R      
+      run: ls -R
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: ./Artifacts
+        file: ../Dockerfile
+        platforms: windows
+        push: true
+        tags: andreishvedau/hsmserver:latest
+
+    - name: Image digest
+      run: echo ${{ steps.docker_build.outputs.digest }}
+
+    #     publish:
+    # runs-on: windows-latest
+
+    # steps:
+    #   - name: Checkout
+    #     uses: actions/checkout@v2
