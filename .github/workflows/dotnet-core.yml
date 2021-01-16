@@ -35,28 +35,36 @@ jobs:
         Copy-Item -Path '${{ github.workspace }}\Release' -Destination ${{ github.workspace }}\Artifacts -Recurse
       shell: powershell
     
-    - name: Publish to GitHub
+    - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
        path: ${{ github.workspace }}\Artifacts
-       name: ${{ github.run_number }}
+       name: Release-.${{ github.run_number }}
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build_and_restore
+    steps:
+
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Release-.${{ github.run_number }}
+        path: ./Artifacts
+    
+    - name: Display structure of downloaded files
+      run: ls -R
 
     - name: Publish to DockerHub
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: myDocker/repository
-        workdir: ${{ github.workspace }}\Artifacts
+        name: andreishvedau/hsmserver
+        workdir: ./Artifacts
         dockerfile: Dockerfile
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        tags: "latest"
-
-    - name: Download Artifacts
-      uses: actions/download-artifact@v2
-
-    - name: Display structure of downloaded files
-      run: ls -R
-
+        # tags: "latest"
+    
     # - name: Set up QEMU
     #   uses: docker/setup-qemu-action@v1
 
