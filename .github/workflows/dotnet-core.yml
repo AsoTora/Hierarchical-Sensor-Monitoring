@@ -43,7 +43,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    needs: build_and_restore
+    needs: build
     steps:
 
     - name: Download artifact
