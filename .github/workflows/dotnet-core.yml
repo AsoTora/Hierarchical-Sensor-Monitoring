@@ -39,28 +39,28 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
        path: ${{ github.workspace }}\Artifacts
-       name: Release-.${{ github.run_number }}
+       name: Release-${{ github.run_number }}
 
   publish:
     runs-on: ubuntu-latest
     needs: build
     steps:
+    - uses: actions/checkout@v2
 
     - name: Download artifact
       uses: actions/download-artifact@v2
       with:
-        name: Release-.${{ github.run_number }}
-        path: ./Artifacts
+        name: Release-${{ github.run_number }}
     
     - name: Display structure of downloaded files
-      run: ls -R
+      run: tree -L 2
 
     - name: Publish to DockerHub
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: andreishvedau/hsmserver
-        workdir: ./Artifacts
-        dockerfile: Dockerfile
+        workdir: ./Release
+        dockerfile: ../Dockerfile
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         # tags: "latest"
